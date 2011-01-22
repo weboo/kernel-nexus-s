@@ -37,6 +37,8 @@
 #include <linux/earlysuspend.h>
 #include <linux/suspend.h>
 #endif
+
+#include "logo_rgb24_wvga_portrait_nexus.h"
 #include "s3cfb.h"
 
 struct s3c_platform_fb *to_fb_plat(struct device *dev)
@@ -57,52 +59,15 @@ static int s3cfb_draw_logo(struct fb_info *fb)
 	struct fb_fix_screeninfo *fix = &fb->fix;
 	struct fb_var_screeninfo *var = &fb->var;
 
-	u32 height = var->yres / 3;
-	u32 line = fix->line_length;
-	u32 i, j;
-
-	for (i = 0; i < height; i++) {
-		int offset = i * line;
-		for (j = 0; j < var->xres; j++) {
-			fb->screen_base[offset++] = 0;
-			fb->screen_base[offset++] = 0;
-			fb->screen_base[offset++] = 0xff;
-			fb->screen_base[offset++] = 0;
-		}
-	}
-
-	for (i = height; i < height * 2; i++) {
-		int offset = i * line;
-		for (j = 0; j < var->xres; j++) {
-			fb->screen_base[offset++] = 0;
-			fb->screen_base[offset++] = 0xff;
-			fb->screen_base[offset++] = 0;
-			fb->screen_base[offset++] = 0;
-		}
-	}
-
-	for (i = height * 2; i < height * 3; i++) {
-		int offset = i * line;
-		for (j = 0; j < var->xres; j++) {
-			fb->screen_base[offset++] = 0xff;
-			fb->screen_base[offset++] = 0;
-			fb->screen_base[offset++] = 0;
-			fb->screen_base[offset++] = 0;
-		}
+	if (bootloaderfb) {
+		memcpy(fb->screen_base,
+			LOGO_RGB24, fix->line_length * var->yres);
 	}
 #endif
-	if (bootloaderfb) {
-		u8 *logo_virt_buf;
-		logo_virt_buf = ioremap_nocache(bootloaderfb,
-				fb->var.yres * fb->fix.line_length);
-
-		memcpy(fb->screen_base, logo_virt_buf,
-				fb->var.yres * fb->fix.line_length);
-		iounmap(logo_virt_buf);
-	}
-	return 0;
+  return 0;
 }
 #endif
+
 static irqreturn_t s3cfb_irq_frame(int irq, void *data)
 {
 	struct s3cfb_global *fbdev = (struct s3cfb_global *)data;
